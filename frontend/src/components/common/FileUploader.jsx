@@ -1,7 +1,6 @@
 import { Upload, File, X } from 'lucide-react'
 import { useState } from 'react'
 import { isValidFileType } from '../../utils/helpers'
-import Notification from './Notification'
 
 export const FileUploader = ({ onFileSelect, accept = '.pdf,.jpg,.jpeg,.png', maxSize = 5 }) => {
   const [file, setFile] = useState(null)
@@ -103,7 +102,7 @@ export const FileUploader = ({ onFileSelect, accept = '.pdf,.jpg,.jpeg,.png', ma
           </button>
         </div>
       )}
-      {error && <Notification message={error} type="error" onClose={() => setError(null)} className="mt-2" />}
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
     </div>
   )
 }
