@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Job Detection - API Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab-btn {
+            background: none;
+            color: #666;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.success {
+            display: block;
+            background: #f0f9ff;
+            border: 2px solid #3b82f6;
+            color: #1e3a8a;
+        }
+        
+        .result.error {
+            display: block;
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            color: #7f1d1d;
+        }
+        
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        
+        .prediction-box {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .prediction-fake {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+        }
+        
+        .prediction-real {
+            background: #dcfce7;
+            border: 2px solid #22c55e;
+        }
+        
+        .probability-bar {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .bar {
+            flex: 1;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .bar-real {
+            background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+        }
+        
+        .bar-fake {
+            background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Fake Job Detection</h1>
+        <p class="subtitle">Detect fraudulent job postings using AI</p>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('detailed')">Detailed Form</button>
+            <button class="tab-btn" onclick="switchTab('quick')">Quick Text Check</button>
+        </div>
+        
+        <!-- Detailed Form Tab -->
+        <div id="detailed" class="tab-content active">
+            <form id="detailedForm" class="form-section">
+                <div class="form-group">
+                    <label for="title">Job Title *</label>
+                    <input type="text" id="title" name="title" required placeholder="e.g., Senior Developer">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Job Description *</label>
+                    <textarea id="description" name="description" required placeholder="Detailed job description..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requirements">Requirements *</label>
+                    <textarea id="requirements" name="requirements" required placeholder="Required skills and qualifications..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="company_profile">Company Profile *</label>
+                    <input type="text" id="company_profile" name="company_profile" required placeholder="Company information">
+                </div>
+                
+                <div class="form-group">
+                    <label for="employment_type">Employment Type *</label>
+                    <select id="employment_type" name="employment_type" required>
+                        <option value="">Select employment type</option>
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Temporary">Temporary</option>
+                        <option value="Internship">Internship</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="industry">Industry *</label>
+                    <input type="text" id="industry" name="industry" required placeholder="e.g., Technology, Healthcare">
+                </div>
+                
+                <div class="form-group">
+                    <label for="benefits">Benefits *</label>
+                    <textarea id="benefits" name="benefits" required placeholder="Health insurance, 401k, etc..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="salary_range">Salary Range *</label>
+                    <input type="text" id="salary_range" name="salary_range" required placeholder="e.g., $50,000 - $70,000">
+                </div>
+                
+                <button type="submit">Check Job Posting</button>
+                <div class="loading" id="detailedLoading">
+                    <div class="spinner"></div>
+                    <p>Analyzing...</p>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Quick Text Check Tab -->
+        <div id="quick" class="tab-content">
+            <form id="quickForm" class="form-section">
+                <div class="form-group">
+                    <label for="jobText">Paste Job Posting Text *</label>
+                    <textarea id="jobText" name="jobText" required placeholder="Paste the complete job posting text here..."></textarea>
+                </div>
+                
+                <button type="submit">Analyze Text</button>
+                <div class="loading" id="quickLoading">
+                    <div class="spinner"></div>
+                    <p>Analyzing...</p>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Result Section -->
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5000';
+        
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Clear results
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('result').className = 'result';
+        }
+        
+        // Detailed Form Handler
+        document.getElementById('detailedForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                requirements: document.getElementById('requirements').value,
+                company_profile: document.getElementById('company_profile').value,
+                employment_type: document.getElementById('employment_type').value,
+                industry: document.getElementById('industry').value,
+                benefits: document.getElementById('benefits').value,
+                salary_range: document.getElementById('salary_range').value
+            };
+            
+            await sendPrediction('/predict', data, 'detailedLoading');
+        });
+        
+        // Quick Text Form Handler
+        document.getElementById('quickForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                text: document.getElementById('jobText').value
+            };
+            
+            await sendPrediction('/predict-text', data, 'quickLoading');
+        });
+        
+        async function sendPrediction(endpoint, data, loadingId) {
+            const loading = document.getElementById(loadingId);
+            const resultDiv = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch(API_URL + endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                loading.style.display = 'none';
+                
+                if (response.ok) {
+                    displayResult(result);
+                } else {
+                    displayError(result.error || 'An error occurred');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                displayError('Failed to connect to the API. Make sure the server is running.');
+            }
+        }
+        
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            const isFake = result.is_fake;
+            const confidence = result.confidence.toFixed(2);
+            const realProb = (result.probability.real * 100).toFixed(2);
+            const fakeProb = (result.probability.fake * 100).toFixed(2);
+            
+            resultDiv.className = `result success`;
+            
+            let predictionClass = isFake ? 'prediction-fake' : 'prediction-real';
+            let predictionText = isFake ? '⚠️ FAKE JOB POSTING' : '✓ LEGITIMATE JOB POSTING';
+            let predictionColor = isFake ? 'red' : 'green';
+            
+            resultDiv.innerHTML = `
+                <h3>Analysis Result</h3>
+                <div class="prediction-box ${predictionClass}">
+                    <h2 style="margin-bottom: 10px;">${predictionText}</h2>
+                    <p><strong>Confidence:</strong> ${confidence}%</p>
+                </div>
+                
+                <h3 style="margin-top: 20px;">Probability Distribution</h3>
+                <div class="probability-bar">
+                    <div style="flex: 1;">
+                        <div class="bar bar-real" style="width: ${realProb}%; min-width: 50px;">
+                            ${realProb}% Real
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="bar bar-fake" style="width: ${fakeProb}%; min-width: 50px;">
+                            ${fakeProb}% Fake
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function displayError(error) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result error`;
+            resultDiv.innerHTML = `
+                <h3>❌ Error</h3>
+                <p>${error}</p>
+            `;
+        }
+    </script>
+</body>
+</html>
